@@ -63,7 +63,7 @@ class LateFeeService:
     def apply_late_fee(bill):
         """
         Calculate and apply late fee to a bill.
-        Creates a LateFeeHistory record.
+        Preserves existing late fee waivers and prevents duplicate application.
         """
 
         from apps.finance.models.LateFeeHistory import LateFeeHistory
@@ -74,11 +74,28 @@ class LateFeeService:
         if late_fee <= Decimal("0.00"):
             return bill
 
-        # Prevent applying the same late fee again
-        if bill.late_fee == late_fee:
+        # Get all late fee history records for this bill
+        histories = LateFeeHistory.objects.filter(
+            bill=bill,
+            is_deleted=False
+        )
+
+        # Calculate total amount already waived
+        total_waived = histories.aggregate(
+            total=Sum("waived_amount")
+        )["total"] or Decimal("0.00")
+
+        # Calculate remaining late fee after waivers
+        effective_late_fee = late_fee - total_waived
+
+        if effective_late_fee < Decimal("0.00"):
+            effective_late_fee = Decimal("0.00")
+
+        # Prevent duplicate application
+        if bill.late_fee == effective_late_fee:
             return bill
 
-        bill.late_fee = late_fee
+        bill.late_fee = effective_late_fee
         bill.total_amount = (
             bill.principal_amount + bill.late_fee
         )
@@ -95,13 +112,15 @@ class LateFeeService:
             ]
         )
 
-        LateFeeHistory.objects.create(
-            bill=bill,
-            principal_amount=bill.principal_amount,
-            late_fee_amount=late_fee,
-            waived_amount=Decimal("0.00"),
-            total_amount=bill.total_amount,
-        )
+        # Create history only if this bill has no previous history
+        if not histories.exists():
+            LateFeeHistory.objects.create(
+                bill=bill,
+                principal_amount=bill.principal_amount,
+                late_fee_amount=late_fee,
+                waived_amount=Decimal("0.00"),
+                total_amount=bill.total_amount,
+            )
 
         return bill
 

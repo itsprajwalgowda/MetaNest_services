@@ -16,6 +16,7 @@ class BillSerializer(serializers.ModelSerializer):
         model = Bill
         fields = [
             "id",
+            "flat",
             "billing_month",
             "due_date",
             "base_charge",

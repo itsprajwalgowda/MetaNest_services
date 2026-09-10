@@ -1,11 +1,4 @@
-from drf_spectacular.utils import OpenApiResponse
-
-
-from apps.finance.serializers.MaintenanceConfigurationSerializer import (
-    MaintenanceConfigurationSerializer,
-)
-from apps.finance.serializers.BillSerializer import BillSerializer
-from apps.finance.serializers.PaymentSerializer import PaymentSerializer
+from decimal import Decimal
 
 from drf_spectacular.utils import (
     OpenApiResponse,
@@ -14,6 +7,11 @@ from drf_spectacular.utils import (
 
 from rest_framework import serializers
 
+from apps.finance.serializers.MaintenanceConfigurationSerializer import (
+    MaintenanceConfigurationSerializer,
+)
+from apps.finance.serializers.BillSerializer import BillSerializer
+from apps.finance.serializers.PaymentSerializer import PaymentSerializer
 from apps.finance.serializers.LateFeeHistorySerializer import (
     LateFeeHistorySerializer,
 )
@@ -53,9 +51,10 @@ UPDATE_MAINTENANCE_CONFIGURATION_DOCS = {
 BILL_CREATE_DOCS = {
     "summary": "Generate Bill",
     "description": (
-        "Generate a maintenance bill using the current global "
-        "maintenance configuration. Configuration changes apply "
-        "only to future bills."
+        "Generate a maintenance bill for a specific flat using the "
+        "current global maintenance configuration. "
+        "The flat must exist and must not be deleted. "
+        "Configuration changes apply only to future bills."
     ),
     "request": BillSerializer,
     "responses": {
@@ -64,14 +63,18 @@ BILL_CREATE_DOCS = {
     "tags": ["Finance"],
 }
 
+
 BILL_LIST_DOCS = {
     "summary": "Get Bills",
-    "description": "Retrieve all generated maintenance bills.",
+    "description": (
+        "Retrieve all generated maintenance bills."
+    ),
     "responses": {
         200: BillSerializer(many=True),
     },
     "tags": ["Finance"],
 }
+
 
 PAYMENT_CREATE_DOCS = {
     "summary": "Create Payment",
@@ -88,14 +91,18 @@ PAYMENT_CREATE_DOCS = {
     "tags": ["Finance"],
 }
 
-from drf_spectacular.utils import (
-    OpenApiResponse,
-    extend_schema,
-    inline_serializer,
-)
-from rest_framework import serializers
 
-from apps.finance.serializers.BillSerializer import BillSerializer
+PAYMENT_LIST_DOCS = {
+    "summary": "Get Payment History",
+    "description": (
+        "Retrieve all successful and failed payment records "
+        "that have not been deleted."
+    ),
+    "responses": {
+        200: PaymentSerializer(many=True),
+    },
+    "tags": ["Finance"],
+}
 
 
 LATE_FEE_CREATE_DOCS = {
@@ -103,7 +110,8 @@ LATE_FEE_CREATE_DOCS = {
     "description": (
         "Calculate and apply the applicable late fee to a bill "
         "based on the configured grace period, daily late fee, "
-        "and maximum late fee."
+        "and maximum late fee. "
+        "Existing late fee waivers are preserved."
     ),
     "request": inline_serializer(
         name="LateFeeRequest",
@@ -125,6 +133,7 @@ LATE_FEE_CREATE_DOCS = {
     "tags": ["Finance"],
 }
 
+
 WAIVE_LATE_FEE_DOCS = {
     "summary": "Waive Late Fee",
     "description": (
@@ -140,7 +149,7 @@ WAIVE_LATE_FEE_DOCS = {
             "waived_amount": serializers.DecimalField(
                 max_digits=10,
                 decimal_places=2,
-                min_value=0,
+                min_value=Decimal("0.01"),
             ),
             "waiver_reason": serializers.CharField(
                 help_text="Reason for waiving the late fee"

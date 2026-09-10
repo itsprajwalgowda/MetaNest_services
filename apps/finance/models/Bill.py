@@ -23,6 +23,14 @@ class Bill(models.Model):
         editable=False
     )
 
+    flat = models.ForeignKey(
+        "apartment_master.Flat",
+        on_delete=models.PROTECT,
+        related_name="bills",
+        null=True,
+        blank=True,
+    )
+
     # Billing Information
     billing_month = models.DateField()
 

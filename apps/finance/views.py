@@ -27,6 +27,7 @@ from apps.finance.swagger.finance_docs import (
     BILL_CREATE_DOCS,
     BILL_LIST_DOCS,
     PAYMENT_CREATE_DOCS,
+    PAYMENT_LIST_DOCS,
     LATE_FEE_CREATE_DOCS,
     WAIVE_LATE_FEE_DOCS,
     LATE_FEE_HISTORY_DOCS,
@@ -97,6 +98,7 @@ class BillView(APIView):
         bill = BillService.generate_bill(
             billing_month=serializer.validated_data["billing_month"],
             area_charge=serializer.validated_data["area_charge"],
+            flat_id=serializer.validated_data["flat"].id,
         )
 
         response_serializer = BillSerializer(bill)
@@ -158,7 +160,19 @@ class PaymentView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+    @extend_schema(**PAYMENT_LIST_DOCS)
+    def get(self, request):
+        payments = PaymentService.get_all_payments()
 
+        serializer = PaymentSerializer(
+            payments,
+            many=True
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
 class LateFeeView(APIView):
 
