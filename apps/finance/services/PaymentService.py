@@ -68,6 +68,12 @@ class PaymentService:
         return payment
 
     @staticmethod
+    def get_all_payments():
+        return Payment.objects.filter(
+            is_deleted=False
+        ).select_related("bill").order_by("-payment_date", "-created_at")
+    
+    @staticmethod
     def generate_receipt_number():
         import uuid
 

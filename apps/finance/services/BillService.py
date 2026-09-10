@@ -4,12 +4,13 @@ from django.utils import timezone
 
 from apps.finance.models.Bill import Bill
 from apps.finance.models.MaintenanceConfiguration import MaintenanceConfiguration
+from apps.apartment_master.models import Flat
 
 
 class BillService:
 
     @staticmethod
-    def generate_bill(billing_month, area_charge):
+    def generate_bill(billing_month, area_charge, flat_id):
         configuration = MaintenanceConfiguration.objects.filter(
             is_deleted=False
         ).first()
@@ -17,6 +18,16 @@ class BillService:
         if not configuration:
             raise ValueError(
                 "Maintenance configuration not found."
+            )
+
+        try:
+            flat = Flat.objects.get(
+                id=flat_id,
+                is_deleted=False,
+            )
+        except Flat.DoesNotExist:
+            raise ValueError(
+                "Flat not found."
             )
 
         base_charge = configuration.base_charge
@@ -41,6 +52,7 @@ class BillService:
         )
 
         bill = Bill.objects.create(
+            flat=flat,
             billing_month=billing_month,
             due_date=due_date,
             base_charge=base_charge,
