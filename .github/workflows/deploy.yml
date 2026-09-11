@@ -33,6 +33,7 @@ jobs:
             git checkout dev
             git reset --hard origin/dev
 
+            docker-compose rm -sf backend || true
             docker-compose up -d --build
 
             docker-compose ps
