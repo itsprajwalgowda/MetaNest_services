@@ -1,0 +1,31 @@
+
+services:
+
+  metanest-db:
+    image: postgres:16
+    container_name: metanest-db
+    environment:
+      POSTGRES_DB: metanest_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d metanest_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: metanest-backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      metanest-db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

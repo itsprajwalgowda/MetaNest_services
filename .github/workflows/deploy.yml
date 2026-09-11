@@ -1,0 +1,39 @@
+name: Deploy MetaNest Backend
+
+on:
+  push:
+    branches:
+      - dev
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Backend to Hostinger VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Backend to Hostinger VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+
+          script: |
+            set -e
+
+            cd /root/MetaNest_services
+
+            git fetch origin
+            git checkout dev
+            git reset --hard origin/dev
+
+            docker compose rm -sf backend || true
+            docker compose up -d --build
+
+            docker compose ps
