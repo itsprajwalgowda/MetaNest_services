@@ -1,4 +1,4 @@
-iname: Deploy MetaNest Backend
+name: Deploy MetaNest Backend
 
 on:
   push:
