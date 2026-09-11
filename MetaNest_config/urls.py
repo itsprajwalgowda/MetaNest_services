@@ -41,6 +41,8 @@ urlpatterns = [
         include("apps.finance.urls"),
     ),
 
+    path("api/v1/dashboard/", include("apps.dashboard.urls")),
+
     path(
         "api/v1/admin/users/",
         include("apps.administration.urls"),
